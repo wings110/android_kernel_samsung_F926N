@@ -1,0 +1,104 @@
+name: 编译samsungs20+Kernelsu-Lxc-Docker内核
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+
+    runs-on: ubuntu-20.04
+
+    steps:
+    - uses: actions/checkout@v4
+
+
+
+    - name: 构建编译内核环境
+      run: |
+        sudo apt-get update
+        sudo -E apt-get -y -qq install git make bc bison ccache openssl dos2unix zip kmod cpio flex libelf-dev curl libssl-dev libtfm-dev wget device-tree-compiler ca-certificates python3 python2 binutils binutils-aarch64-linux-gnu binutils-arm-linux-gnueabi
+        mkdir -p $GITHUB_WORKSPACE/kernel_workspace
+    
+    - name: 下载Clang编译器
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        mkdir clang-12
+        git clone https://github.com/ghazzor/proton-12.git --depth=1 clang-12
+
+    
+    - name: 下载内核源码
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        git clone https://github.com/wings110/android_kernel_samsung_F926N.git android-kernel --depth=1
+
+    - name: sudo chmod+x
+      run: |
+          chmod -R +x $GITHUB_WORKSPACE/kernel_workspace/
+
+    - name: 安装 ksu
+      run: |
+        curl -LSs "https://raw.githubusercontent.com/tiann/KernelSU/main/kernel/setup.sh" | bash -s v0.9.5
+
+    - name: 查看目录
+      run: |
+        ls
+        
+    - name: 设置ccache缓存
+      uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: build-kernel-mido-kernel
+        max-size: 2G
+
+
+    - name: 开始编译内核
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
+        export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-12/bin:$PATH
+mkdir out
+clear
+
+ARGS="
+CC=clang
+CROSS_COMPILE=aarch64-linux-gnu-
+ARCH=arm64
+LD=ld.lld
+AR=llvm-ar
+NM=llvm-nm
+OBJCOPY=llvm-objcopy
+OBJDUMP=llvm-objdump
+READELF=llvm-readelf
+OBJSIZE=llvm-size
+STRIP=llvm-strip
+LLVM_AR=llvm-ar
+LLVM_DIS=llvm-dis
+CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+"
+make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} clean && make -j8 -C $(pwd) O=$(pwd)/out ${ARGS} mrproper
+make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} vendor/q2q_kor_singlex_defconfig
+make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} menuconfig
+make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS}      
+
+    - name: 制作Anykernel3卡刷包
+      run: |
+        cd $GITHUB_WORKSPACE/kernel_workspace
+        git clone https://github.com/wings110/AnyKernel3.git
+        sed -i 's/do.devicecheck=1/do.devicecheck=0/g' AnyKernel3/anykernel.sh
+        sed -i 's!block=/dev/block/platform/omap/omap_hsmmc.0/by-name/boot;!block=auto;!g' AnyKernel3/anykernel.sh
+        sed -i 's/is_slot_device=0;/is_slot_device=auto;/g' AnyKernel3/anykernel.sh
+        cp android-kernel/out/arch/arm64/boot/Image AnyKernel3/
+        rm -rf AnyKernel3/.git* AnyKernel3/README.md
+            
+    
+    - name: 上传 Anykernel3
+      uses: actions/upload-artifact@v4
+      with:
+        name: TWRP-卡刷包
+        path: kernel_workspace/AnyKernel3/*
+        
+        
+    - name: 上传编译内核
+      uses: actions/upload-artifact@v4
+      with:
+        name: Image
+        path: kernel_workspace/android-kernel/out/arch/arm64/boot/Image
+
