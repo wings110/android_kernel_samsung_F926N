@@ -54,29 +54,29 @@ jobs:
       run: |
         cd $GITHUB_WORKSPACE/kernel_workspace/android-kernel
         export PATH=$GITHUB_WORKSPACE/kernel_workspace/clang-12/bin:$PATH
-mkdir out
-clear
+       mkdir out
+       clear
 
-ARGS="
-CC=clang
-CROSS_COMPILE=aarch64-linux-gnu-
-ARCH=arm64
-LD=ld.lld
-AR=llvm-ar
-NM=llvm-nm
-OBJCOPY=llvm-objcopy
-OBJDUMP=llvm-objdump
-READELF=llvm-readelf
-OBJSIZE=llvm-size
-STRIP=llvm-strip
-LLVM_AR=llvm-ar
-LLVM_DIS=llvm-dis
-CROSS_COMPILE_ARM32=arm-linux-gnueabi-
-"
-make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} clean && make -j8 -C $(pwd) O=$(pwd)/out ${ARGS} mrproper
-make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} vendor/q2q_kor_singlex_defconfig
-make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} menuconfig
-make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS}      
+       ARGS="
+       CC=clang
+       CROSS_COMPILE=aarch64-linux-gnu-
+       ARCH=arm64
+       LD=ld.lld
+       AR=llvm-ar
+       NM=llvm-nm
+       OBJCOPY=llvm-objcopy
+       OBJDUMP=llvm-objdump
+       READELF=llvm-readelf
+       OBJSIZE=llvm-size
+       STRIP=llvm-strip
+       LLVM_AR=llvm-ar
+       LLVM_DIS=llvm-dis
+       CROSS_COMPILE_ARM32=arm-linux-gnueabi-
+       "
+       make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} clean && make -j8 -C $(pwd) O=$(pwd)/out ${ARGS} mrproper
+       make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} vendor/q2q_kor_singlex_defconfig
+       make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS} menuconfig
+       make -j$(nproc) -C $(pwd) O=$(pwd)/out ${ARGS}      
 
     - name: 制作Anykernel3卡刷包
       run: |
