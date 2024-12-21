@@ -1,7 +1,7 @@
 #!/bin/bash
 export ARCH=arm64
 ln -s /usr/bin/python2.7 $HOME/python
-export PATH=$HOME/clang-r487747c-13.0/bin:$PATH # Proton 的路径
+export PATH=$HOME/clang/bin:$PATH # Proton 的路径
 mkdir out
 clear
 
